@@ -1,4 +1,4 @@
-import os, requests, sys, json
+import os, requests, sys
 
 # --- Get diff ---
 try:
@@ -15,12 +15,14 @@ except FileNotFoundError:
 
 # --- Get review from Ollama ---
 try:
-    prompt = f"""You are a senior code reviewer. Review this git diff and provide:
-    1. Potential bugs
-    2. Code quality issues
-    3. Suggestions for improvement
+    prompt = f"""You are a senior code reviewer. Review this git diff and assess:
+    1. PEP-8 Compliance
+    2. Possible bugs
+    3. Possible security considerations
+    4. Suggestions for improvement with fully rewritten code
 
-    Make sure to indicate the offending lines.
+    At the top of your answer, include a verdict wherein if there are any obvious issues, say CODE IS REJECTED.
+    Otherwise, say CODE IS CONDITIONALLY ACCEPTED.
 
     Diff:
     {diff}
@@ -70,4 +72,11 @@ except KeyError as e:
     print(f"❌ Missing environment variable: {e}")
     sys.exit(1)
 
-sys.exit(0)
+# --- Check if code is rejected or conditionally accepted ---
+
+if "REJECTED" in review:
+    print("This code has been rejected")
+    sys.exit(1)
+else:
+    print("This code has been conditionally accepted")
+    sys.exit(0)
