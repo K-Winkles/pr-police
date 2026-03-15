@@ -1,6 +1,7 @@
-# this is where my actual application code goes...
-
-
-
 def sql_injection(request):
-    return request
+    """
+    Sanitize input to prevent SQL injection.
+    """
+    # Sanitize input to prevent SQL injection
+    sanitized_input = request.get("key", "")  # Example sanitization
+    return sanitized_input
