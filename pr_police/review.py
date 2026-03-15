@@ -23,20 +23,22 @@ try:
     if not pr_review_url:
         raise ValueError("PR_REVIEW_URL environment variable is not set")
 
-    data = {'prompt': f"""You are a senior code reviewer. Review this git diff and assess:
-        1. PEP-8 Compliance
-        2. Possible bugs
-        3. Possible security considerations
-
+    data = {'prompt': f"""You are a senior code reviewer. Make a joke about how old you are.
+            
         At the top of your answer, include a verdict wherein if there are any major security issues, say CODE IS REJECTED.
         Otherwise, say CODE IS ACCEPTED.
             
-        Include a summary rating the above 3 criteria out of 5 stars.
+        Include a summary rating the below 3 criteria out of 5 stars.
             
-        Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
+        Review this git diff and assess:
+        1. PEP-8 Compliance
+        2. Possible bugs
+        3. Possible security considerations
             
-        Make a joke about how old you are.
+        Include the suggested code changes.
 
+        Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
+        
         Diff:
         {diff}""",
         "model": model
