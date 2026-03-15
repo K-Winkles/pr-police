@@ -146,13 +146,7 @@ if inline_matches:
 else:
     print("No inline comments found in review.")
 
-# --- Check verdict ---
-if "VERDICT: CODE IS REJECTED" in review.upper().split("\n")[0]:
-    print("Code has been rejected")
-    sys.exit(1)
-else:
-    print("Code has been accepted")
-    sys.exit(0)
+
 
 # --- Write PR description if it's empty ---
 print("Attempting to populate PR description")
@@ -160,8 +154,6 @@ pr = requests.get(
     f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
     headers={"Authorization": f"Bearer {gh_token}"}
 ).json()
-
-print(pr)
 
 if not pr["body"]:
     generated_description = ask_model(f"Write a concise PR description for this diff:\n{diff}")
@@ -179,4 +171,10 @@ if result.status_code == 200:  # PATCH returns 200, not 201
 else:
     print(f"❌ Failed to update description: {result.text}")
 
-
+# --- Check verdict ---
+if "VERDICT: CODE IS REJECTED" in review.upper().split("\n")[0]:
+    print("Code has been rejected")
+    sys.exit(1)
+else:
+    print("Code has been accepted")
+    sys.exit(0)
