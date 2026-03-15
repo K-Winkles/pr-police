@@ -1,4 +1,6 @@
-import os, requests, sys
+import os
+import requests
+import sys
 
 # --- Get diff ---
 try:
@@ -15,33 +17,36 @@ except FileNotFoundError:
 
 # --- Get review from Ollama ---
 try:
-    prompt = f"""You are a senior code reviewer. Review this git diff and assess:
-    1. PEP-8 Compliance
-    2. Possible bugs
-    3. Possible security considerations
-    4. Suggestions for improvement with fully rewritten code
+    pr_review_url = os.getenv('PR_REVIEW_URL')
+    model = os.getenv('MODEL')
+    if not pr_review_url:
+        raise ValueError("PR_REVIEW_URL environment variable is not set")
 
-    At the top of your answer, include a verdict wherein if there are any obvious issues, say CODE IS REJECTED.
-    Otherwise, say CODE IS ACCEPTED.
+    headers = {'Content-Type': 'application/json'}
+    data = {'prompt': f"""You are a senior code reviewer. Review this git diff and assess:
+        1. PEP-8 Compliance
+        2. Possible bugs
+        3. Possible security considerations
+        4. Suggestions for improvement with fully rewritten code
 
-    Diff:
-    {diff}
-    """
+        At the top of your answer, include a verdict wherein if there are any major security issues, say CODE IS REJECTED.
+        Otherwise, say CODE IS ACCEPTED.
+            
+        Include a summary rating the above 4 criteria out of 5 stars.
 
-    response = requests.post(
-        "http://localhost:8000/generate",
-        json={"prompt": prompt, "model": "qwen2.5-coder:7b"},
-        timeout=999
-    )
+        Diff:
+        {diff}""",
+        "model": model
+    }
+
+    response = requests.post(pr_review_url, headers=headers, json=data)
     response.raise_for_status()
-    review = response.json()["response"]
-    print(review)
+    review = response.json().get('review')
+    if not review:
+        raise ValueError("No review received from the server")
 
-except requests.exceptions.ConnectionError:
-    print("❌ Could not connect to FastAPI at localhost:8000 — is it running?")
-    sys.exit(1)
-except Exception as e:
-    print(f"❌ Unexpected error getting review: {e}")
+except (requests.RequestException, KeyError, ValueError) as e:
+    print(f"❌ Error: {e}")
     sys.exit(1)
 
 # --- Post to PR ---
@@ -73,9 +78,6 @@ except KeyError as e:
     sys.exit(1)
 
 # --- Check if code is rejected or conditionally accepted ---
-
-print(review.upper())
-print(review.upper().contains("CODE IS REJECTED"))
 
 if  review.upper().contains("CODE IS REJECTED"):
     print("Code has been rejected")
