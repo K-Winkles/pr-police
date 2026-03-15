@@ -2,7 +2,7 @@ import os, requests, sys, json
 
 # --- Get diff ---
 try:
-    with open("pr_diff.txt", "r") as f:
+    with open("pr_police/pr_diff.txt", "r") as f:
         diff = f.read()
 
     if not diff.strip():
