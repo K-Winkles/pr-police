@@ -27,12 +27,15 @@ try:
         1. PEP-8 Compliance
         2. Possible bugs
         3. Possible security considerations
-        4. Suggestions for improvement with fully rewritten code
 
         At the top of your answer, include a verdict wherein if there are any major security issues, say CODE IS REJECTED.
         Otherwise, say CODE IS ACCEPTED.
             
         Include a summary rating the above 4 criteria out of 5 stars.
+            
+        Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
+            
+        Make a joke about how old you are.
 
         Diff:
         {diff}""",
@@ -41,8 +44,7 @@ try:
 
     response = requests.post(pr_review_url, json=data, timeout=999)
     response.raise_for_status()
-    print(response)
-    review = response.json().get('review')
+    review = response.json().get['response']
     if not review:
         raise ValueError("No review received from the server")
 
