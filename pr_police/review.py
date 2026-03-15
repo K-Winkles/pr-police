@@ -122,7 +122,7 @@ def get_review(diff: str) -> str:
         Make a joke about how old you are.
 
         At the top of the file: put VERDICT: CODE IS REJECTED
-        if the code is clearly low quality with nonsensical logic.
+        if there is an immediate security risk.
         Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
 
         Include a summary rating the below 3 criteria out of 5 stars.
