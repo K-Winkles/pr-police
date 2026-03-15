@@ -57,7 +57,6 @@ def sanitize_prompt(prompt: str) -> str:
         r'disregard (all |previous |above )?instructions',
         r'you are now',
         r'new persona',
-        r'act as (a |an )?(?!junior|senior|developer)',
         r'forget (all |everything|your )?(you |previously )?know',
         r'system prompt',
         r'jailbreak',
@@ -66,12 +65,6 @@ def sanitize_prompt(prompt: str) -> str:
         if re.search(pattern, prompt, re.IGNORECASE):
             print(f"⚠️ Potential prompt injection detected, neutralizing...")
             prompt = re.sub(pattern, '[REDACTED]', prompt, flags=re.IGNORECASE)
-
-    # Truncate to ~24,000 characters (~6,000 tokens) to stay safe within context window
-    max_chars = 24_000
-    if len(prompt) > max_chars:
-        print(f"⚠️ Prompt truncated from {len(prompt)} to {max_chars} characters")
-        prompt = prompt[:max_chars] + "\n... [truncated]"
 
     return prompt
 
