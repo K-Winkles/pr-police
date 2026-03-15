@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # add this
+
 jobs:
   review:
     runs-on: self-hosted  # uses your local machine
@@ -11,10 +14,14 @@ jobs:
     steps:
       - name: Checkout PR code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # fetch full history
+          ref: ${{ github.head_ref }}   # checkout the PR branch
 
       - name: Get changed files
         id: diff
         run: |
+          git fetch origin main
           git diff origin/main...HEAD > pr_diff.txt
           cat pr_diff.txt
 
