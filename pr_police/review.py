@@ -155,16 +155,28 @@ else:
     sys.exit(0)
 
 # --- Write PR description if it's empty ---
+print("Attempting to populate PR description")
 pr = requests.get(
     f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
     headers={"Authorization": f"Bearer {gh_token}"}
 ).json()
 
+print(pr)
+
 if not pr["body"]:
     generated_description = ask_model(f"Write a concise PR description for this diff:\n{diff}")
-    requests.patch(
-        f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
-        headers={"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"},
-        json={"body": generated_description}
-    )
+    print(generated_description)
+
+result = requests.patch(
+    f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
+    headers={"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"},
+    json={"body": generated_description}
+)
+
+print(f"GitHub API status: {result.status_code}")
+if result.status_code == 200:  # PATCH returns 200, not 201
+    print("✅ PR description updated successfully")
+else:
+    print(f"❌ Failed to update description: {result.text}")
+
 
