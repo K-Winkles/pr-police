@@ -28,7 +28,8 @@ try:
 
     data = {'prompt': f"""You are a senior code reviewer. Make a joke about how old you are.
             
-        At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns. Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
+        At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns.
+        Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
             
         Include a summary rating the below 3 criteria out of 5 stars. Then, get the average rating.
             
@@ -140,7 +141,7 @@ else:
 
 
 # --- Check verdict ---
-if "VERDICT: CODE IS REJECTED" in review.upper():
+if "VERDICT: CODE IS REJECTED" in review.upper().split("\n")[0]:
     print("Code has been rejected")
     sys.exit(1)
 else:
