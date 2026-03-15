@@ -39,7 +39,7 @@ try:
         "model": model
     }
 
-    response = requests.post(pr_review_url, headers=headers, json=data)
+    response = requests.post(pr_review_url, json=data, timeout=999)
     response.raise_for_status()
     review = response.json().get('review')
     if not review:
