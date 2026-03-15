@@ -7,4 +7,5 @@ Simple PR reviewer. No voodoo or magic happening here.
     * `app.py` contains the script to serve the LLM locally
     * `review.py` is what the workflow calls to forward the PR code diff to the LLM
     * `send.py` is just a test script to check if the model is operational
+    * `setup.sh` is for first-time set up on machines that will be used as runners
 2. All actual project files will be placed anywhere but the `pr_police` folder.
