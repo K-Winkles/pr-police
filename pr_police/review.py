@@ -19,10 +19,10 @@ except FileNotFoundError:
 try:
     pr_review_url = os.getenv('PR_REVIEW_URL')
     model = os.getenv('MODEL')
+    print(pr_review_url)
     if not pr_review_url:
         raise ValueError("PR_REVIEW_URL environment variable is not set")
 
-    headers = {'Content-Type': 'application/json'}
     data = {'prompt': f"""You are a senior code reviewer. Review this git diff and assess:
         1. PEP-8 Compliance
         2. Possible bugs
