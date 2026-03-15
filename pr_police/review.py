@@ -1,4 +1,6 @@
-import os, requests, sys, json
+import os
+import requests
+import sys
 
 # --- Get diff ---
 try:
@@ -15,31 +17,40 @@ except FileNotFoundError:
 
 # --- Get review from Ollama ---
 try:
-    prompt = f"""You are a senior code reviewer. Review this git diff and provide:
-    1. Potential bugs
-    2. Code quality issues
-    3. Suggestions for improvement
+    pr_review_url = os.getenv('PR_REVIEW_URL')
+    model = os.getenv('MODEL')
 
-    Make sure to indicate the offending lines.
+    if not pr_review_url:
+        raise ValueError("PR_REVIEW_URL environment variable is not set")
 
-    Diff:
-    {diff}
-    """
+    data = {'prompt': f"""You are a senior code reviewer. Make a joke about how old you are.
+            
+        At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns. Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPETED.
+            
+        Include a summary rating the below 3 criteria out of 5 stars. Then, get the average rating.
+            
+        Review this git diff and assess:
+        1. PEP-8 Compliance
+        2. Possible bugs
+        3. Possible security considerations
+            
+        Include the suggested code changes.
 
-    response = requests.post(
-        "http://localhost:8000/generate",
-        json={"prompt": prompt, "model": "qwen2.5-coder:7b"},
-        timeout=999
-    )
+        Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
+        
+        Diff:
+        {diff}""",
+        "model": model
+    }
+
+    response = requests.post(pr_review_url, json=data, timeout=999)
     response.raise_for_status()
-    review = response.json()["response"]
-    print(review)
+    review = response.json()['response']
+    if not review:
+        raise ValueError("No review received from the server")
 
-except requests.exceptions.ConnectionError:
-    print("❌ Could not connect to FastAPI at localhost:8000 — is it running?")
-    sys.exit(1)
-except Exception as e:
-    print(f"❌ Unexpected error getting review: {e}")
+except (requests.RequestException, KeyError, ValueError) as e:
+    print(f"❌ Error: {e}")
     sys.exit(1)
 
 # --- Post to PR ---
@@ -70,4 +81,11 @@ except KeyError as e:
     print(f"❌ Missing environment variable: {e}")
     sys.exit(1)
 
-sys.exit(0)
+# --- Check if code is rejected or conditionally accepted ---
+
+if "Verdict: CODE IS REJECTED" in review.upper():
+    print("Code has been rejected")
+    sys.exit(1)
+else:
+    print("Code has been accepted")
+    sys.exit(0)
