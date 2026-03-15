@@ -1,6 +1,8 @@
 import os
 import requests
 import sys
+import re
+
 
 # --- Get diff ---
 try:
@@ -15,6 +17,7 @@ except FileNotFoundError:
     print("❌ pr_diff.txt not found")
     sys.exit(1)
 
+
 # --- Get review from Ollama ---
 try:
     pr_review_url = os.getenv('PR_REVIEW_URL')
@@ -25,7 +28,7 @@ try:
 
     data = {'prompt': f"""You are a senior code reviewer. Make a joke about how old you are.
             
-        At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns. Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPETED.
+        At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns. Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
             
         Include a summary rating the below 3 criteria out of 5 stars. Then, get the average rating.
             
@@ -35,6 +38,9 @@ try:
         3. Possible security considerations
             
         Include the suggested code changes.
+
+        After your review, add a section called INLINE COMMENTS in this exact format, one per line:
+        INLINE::filename.py::42::Your comment about this specific line
 
         Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
         
@@ -53,13 +59,34 @@ except (requests.RequestException, KeyError, ValueError) as e:
     print(f"❌ Error: {e}")
     sys.exit(1)
 
-# --- Post to PR ---
-try:
-    print("Now posting to the PR thread...")
 
+# --- Get latest commit SHA ---
+try:
     gh_token = os.environ["GITHUB_TOKEN"]
     repo = os.environ["GITHUB_REPOSITORY"]
     pr_number = os.environ["PR_NUMBER"]
+
+    pr_data = requests.get(
+        f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
+        headers={
+            "Authorization": f"Bearer {gh_token}",
+            "Accept": "application/vnd.github+json"
+        }
+    ).json()
+    commit_sha = pr_data["head"]["sha"]
+    print(f"Latest commit SHA: {commit_sha}")
+
+except KeyError as e:
+    print(f"❌ Missing environment variable: {e}")
+    sys.exit(1)
+
+
+# --- Post main review comment ---
+try:
+    print("Now posting to the PR thread...")
+
+    # Split review body from inline comments
+    review_body = review.split("INLINE COMMENTS")[0].strip() if "INLINE COMMENTS" in review else review
 
     result = requests.post(
         f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments",
@@ -67,12 +94,12 @@ try:
             "Authorization": f"Bearer {gh_token}",
             "Accept": "application/vnd.github+json"
         },
-        json={"body": f"## 🚔 PR Police Report\n\n{review}"}
+        json={"body": f"## 🚔 PR Police Report\n\n{review_body}"}
     )
 
     print(f"GitHub API status: {result.status_code}")
     if result.status_code == 201:
-        print("✅ Posted to PR thread successfully")
+        print("✅ Posted main review successfully")
     else:
         print(f"❌ Failed: {result.text}")
         sys.exit(1)
@@ -81,9 +108,39 @@ except KeyError as e:
     print(f"❌ Missing environment variable: {e}")
     sys.exit(1)
 
-# --- Check if code is rejected or conditionally accepted ---
 
-if "Verdict: CODE IS REJECTED" in review.upper():
+# --- Post inline comments ---
+inline_pattern = re.compile(r'INLINE::(.+?)::(\d+)::(.+)')
+inline_matches = inline_pattern.findall(review)
+
+if inline_matches:
+    print(f"Found {len(inline_matches)} inline comments, posting...")
+    for filename, line_num, comment in inline_matches:
+        inline_result = requests.post(
+            f"https://api.github.com/repos/{repo}/pulls/{pr_number}/comments",
+            headers={
+                "Authorization": f"Bearer {gh_token}",
+                "Accept": "application/vnd.github+json"
+            },
+            json={
+                "body": f"🚔 {comment.strip()}",
+                "commit_id": commit_sha,
+                "path": filename.strip(),
+                "line": int(line_num),
+                "side": "RIGHT"
+            }
+        )
+        if inline_result.status_code == 201:
+            print(f"✅ Inline comment posted on {filename}:{line_num}")
+        else:
+            # Don't fail the whole run if one inline comment fails
+            print(f"⚠️ Could not post inline on {filename}:{line_num} — {inline_result.text}")
+else:
+    print("No inline comments found in review.")
+
+
+# --- Check verdict ---
+if "VERDICT: CODE IS REJECTED" in review.upper():
     print("Code has been rejected")
     sys.exit(1)
 else:
