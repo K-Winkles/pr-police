@@ -135,14 +135,14 @@ def get_review(diff: str) -> str:
 
         Include the suggested code changes.
 
+        If applicable, generate simple unit tests for all the functions covered in the diff.
+
         After your review, add a section called INLINE COMMENTS
         in this exact format, one per line:
         INLINE::filename.py::42::Your comment about this specific line
 
         Diff:
-        {diff}
-
-        If applicable, generate simple unit tests for all the functions covered in the diff."""
+        {diff}"""
     return ask_model(prompt)
 
 
