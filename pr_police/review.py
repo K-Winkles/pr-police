@@ -122,11 +122,8 @@ def get_review(diff: str) -> str:
         Make a joke about how old you are.
 
         At the top of the file: put VERDICT: CODE IS REJECTED
-        if there are major security concerns.
+        if there is an immediate security risk.
         Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
-
-        Include a summary rating the below 3 criteria out of 5 stars.
-        Then, get the average rating.
 
         Review this git diff and assess:
         1. PEP-8 Compliance
@@ -135,14 +132,14 @@ def get_review(diff: str) -> str:
 
         Include the suggested code changes.
 
+        If applicable, generate simple unit tests for all the functions covered in the diff.
+
         After your review, add a section called INLINE COMMENTS
         in this exact format, one per line:
         INLINE::filename.py::42::Your comment about this specific line
 
         Diff:
-        {diff}
-
-        If applicable, generate simple unit tests for all the functions covered in the diff."""
+        {diff}"""
     return ask_model(prompt)
 
 
