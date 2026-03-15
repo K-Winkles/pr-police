@@ -23,6 +23,57 @@ def get_diff() -> str:
         print("❌ pr_diff.txt not found")
         sys.exit(1)
 
+def sanitize_prompt(prompt: str) -> str:
+    """
+    Sanitizes a prompt before passing it to the model.
+    Removes null bytes, strips excessive whitespace, truncates to a
+    safe token limit, and blocks prompt injection attempts.
+
+    Args:
+        prompt (str): The prompt to send to the model.
+
+    Returns:
+        str: The sanitized prompt.
+
+    Raises:
+        ValueError: If the prompt is empty after sanitization.
+    """
+    if not prompt or not prompt.strip():
+        raise ValueError("Prompt is empty")
+
+    # Remove null bytes and non-printable characters
+    prompt = prompt.replace("\x00", "")
+    prompt = re.sub(r'[^\x09\x0A\x0D\x20-\x7E\x80-\xFF]', '', prompt)
+
+    # Collapse excessive blank lines (more than 2 in a row)
+    prompt = re.sub(r'\n{3,}', '\n\n', prompt)
+
+    # Strip leading/trailing whitespace
+    prompt = prompt.strip()
+
+    # Block prompt injection attempts
+    injection_patterns = [
+        r'ignore (all |previous |above )?instructions',
+        r'disregard (all |previous |above )?instructions',
+        r'you are now',
+        r'new persona',
+        r'act as (a |an )?(?!junior|senior|developer)',
+        r'forget (all |everything|your )?(you |previously )?know',
+        r'system prompt',
+        r'jailbreak',
+    ]
+    for pattern in injection_patterns:
+        if re.search(pattern, prompt, re.IGNORECASE):
+            print(f"⚠️ Potential prompt injection detected, neutralizing...")
+            prompt = re.sub(pattern, '[REDACTED]', prompt, flags=re.IGNORECASE)
+
+    # Truncate to ~24,000 characters (~6,000 tokens) to stay safe within context window
+    max_chars = 24_000
+    if len(prompt) > max_chars:
+        print(f"⚠️ Prompt truncated from {len(prompt)} to {max_chars} characters")
+        prompt = prompt[:max_chars] + "\n... [truncated]"
+
+    return prompt
 
 def ask_model(prompt: str) -> str:
     """
@@ -46,7 +97,8 @@ def ask_model(prompt: str) -> str:
         raise ValueError("PR_REVIEW_URL env var is not set")
 
     try:
-        response = requests.post(pr_review_url, json={'prompt': prompt, 'model': model}, timeout=500)
+        response = requests.post(
+            pr_review_url, json={'prompt': sanitize_prompt(prompt), 'model': model}, timeout=500)
         response.raise_for_status()
         review = response.json().get('response', '')
 
@@ -114,12 +166,16 @@ def get_pr_context() -> tuple[str, str, str, str]:
     repo = os.environ["GITHUB_REPOSITORY"]
     pr_number = os.environ["PR_NUMBER"]
 
-    pr_data = requests.get(
-        f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
-        headers={"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"}
-    ).json()
-    commit_sha = pr_data["head"]["sha"]
-    print(f"Latest commit SHA: {commit_sha}")
+    try:
+        pr_data = requests.get(
+            f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
+            headers={"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"}
+        ).json()
+        commit_sha = pr_data["head"]["sha"]
+        print(f"Latest commit SHA: {commit_sha}")
+    except:
+        print("Failed to get PR context")
+        return None, None, None, None
 
     return gh_token, repo, pr_number, commit_sha
 
