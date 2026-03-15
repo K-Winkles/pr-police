@@ -15,6 +15,8 @@ try:
     2. Code quality issues
     3. Suggestions for improvement
 
+    Make sure to indicate the offending lines.
+
     Diff:
     {diff}
     """
