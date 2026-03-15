@@ -125,9 +125,6 @@ def get_review(diff: str) -> str:
         if there is an immediate security risk.
         Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
 
-        Include a summary rating the below 3 criteria out of 5 stars.
-        Then, get the average rating.
-
         Review this git diff and assess:
         1. PEP-8 Compliance
         2. Possible bugs
