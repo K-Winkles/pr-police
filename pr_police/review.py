@@ -39,19 +39,23 @@ def ask_model(prompt: str) -> str:
         ValueError: If PR_REVIEW_URL is not set or the model returns an empty response.
         requests.RequestException: If the request to the model fails.
     """
-    pr_review_url = os.getenv('PR_REVIEW_URL')
+    pr_review_url = os.getenv('PR_REVIEW_URL', 'http://localhost:8000/generate')
     model = os.getenv('MODEL') or 'qwen2.5-coder:7b'
 
     if not pr_review_url:
         raise ValueError("PR_REVIEW_URL env var is not set")
 
-    response = requests.post(pr_review_url, json={'prompt': prompt, 'model': model}, timeout=500)
-    response.raise_for_status()
-    review = response.json().get('response', '')
+    try:
+        response = requests.post(pr_review_url, json={'prompt': prompt, 'model': model}, timeout=500)
+        response.raise_for_status()
+        review = response.json().get('response', '')
 
-    if not review:
-        raise ValueError("No review received from the server")
-    return review
+        if not review:
+            raise ValueError("No review received from the server")
+        return review
+    except requests.RequestException as e:
+        print(f"❌ Error making request to model: {e}")
+        raise
 
 
 def get_review(diff: str) -> str:
