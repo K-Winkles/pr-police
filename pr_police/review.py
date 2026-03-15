@@ -4,7 +4,7 @@ import sys
 
 # --- Get diff ---
 try:
-    with open('diff.txt', 'r') as file:
+    with open('pr_police/pr_diff.txt', 'r') as file:
         diff = file.read()
 except FileNotFoundError:
     print("❌ Diff file not found")
