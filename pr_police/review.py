@@ -82,7 +82,7 @@ except KeyError as e:
 
 # --- Check if code is rejected or conditionally accepted ---
 
-if  review.upper().contains("CODE IS REJECTED"):
+if "CODE IS REJECTED" in review.upper():
     print("Code has been rejected")
     sys.exit(1)
 else:
