@@ -28,3 +28,4 @@ jobs:
       - name: Run PR Police
         run: |
           python review.py
+        continue-on-error: false

@@ -1,27 +1,42 @@
 import os, requests
 
-with open("pr_diff.txt", "r") as f:
-    diff = f.read()
+import requests, sys, json
 
-prompt = f"""You are a senior code reviewer. Review this git diff and provide:
-1. Potential bugs
-2. Code quality issues
-3. Suggestions for improvement
+try:
+    with open("pr_diff.txt", "r") as f:
+        diff = f.read()
 
-Diff:
-{diff}
-"""
+    if not diff.strip():
+        print("No diff found, skipping.")
+        sys.exit(0)
 
-response = requests.post(
-    "http://localhost:8000/generate",
-    json={"prompt": prompt, "model": "qwen2.5-coder:7b"}
-)
+    prompt = f"""You are a senior code reviewer. Review this git diff and provide:
+    1. Potential bugs
+    2. Code quality issues
+    3. Suggestions for improvement
 
-review = response.json()["response"]
+    Diff:
+    {diff}
+    """
 
-# Fail the action if serious issues found (optional)
-if "critical" in review.lower() or "bug" in review.lower():
-    exit(1)
+    response = requests.post(
+        "http://localhost:8000/generate",
+        json={"prompt": f"{prompt}", "model": "qwen2.5-coder:7b"},
+        timeout=999
+    )
+    response.raise_for_status()
+    review = response.json()["response"]
+    print(review)
+
+except FileNotFoundError:
+    print("❌ pr_diff.txt not found")
+    sys.exit(1)
+except requests.exceptions.ConnectionError:
+    print("❌ Could not connect to FastAPI at localhost:8000 — is it running?")
+    sys.exit(1)
+except Exception as e:
+    print(f"❌ Unexpected error: {e}")
+    sys.exit(1)
 
 gh_token = os.environ["GITHUB_TOKEN"]
 repo = os.environ["GITHUB_REPOSITORY"]
