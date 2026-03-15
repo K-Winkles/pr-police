@@ -141,7 +141,8 @@ def get_review(diff: str) -> str:
 
         Diff:
         {diff}
-    """
+
+        If applicable, generate simple unit tests for all the functions covered in the diff."""
     return ask_model(prompt)
 
 
