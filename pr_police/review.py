@@ -25,10 +25,9 @@ try:
 
     data = {'prompt': f"""You are a senior code reviewer. Make a joke about how old you are.
             
-        At the top of your answer, include a verdict wherein if there are any major security issues, say CODE IS REJECTED.
-        Otherwise, say CODE IS ACCEPTED.
+        At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns. Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPETED.
             
-        Include a summary rating the below 3 criteria out of 5 stars.
+        Include a summary rating the below 3 criteria out of 5 stars. Then, get the average rating.
             
         Review this git diff and assess:
         1. PEP-8 Compliance
@@ -84,7 +83,7 @@ except KeyError as e:
 
 # --- Check if code is rejected or conditionally accepted ---
 
-if "CODE IS REJECTED" in review.upper():
+if "Verdict: CODE IS REJECTED" in review.upper():
     print("Code has been rejected")
     sys.exit(1)
 else:
