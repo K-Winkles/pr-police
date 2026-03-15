@@ -63,6 +63,7 @@ def sanitize_prompt(prompt: str) -> str:
     ]
     for pattern in injection_patterns:
         if re.search(pattern, prompt, re.IGNORECASE):
+            print(pattern)
             print(f"⚠️ Potential prompt injection detected, neutralizing...")
             prompt = re.sub(pattern, '[REDACTED]', prompt, flags=re.IGNORECASE)
 
