@@ -74,12 +74,12 @@ except KeyError as e:
 
 # --- Check if code is rejected or conditionally accepted ---
 
-if "CODE IS REJECTED" in review.upper():
-    print("This code has been rejected")
+print(review.upper())
+print(review.upper().contains("CODE IS REJECTED"))
+
+if  review.upper().contains("CODE IS REJECTED"):
+    print("Code has been rejected")
     sys.exit(1)
-elif "CODE IS ACCEPTED" in review.upper():
-    print("This code has been conditionally accepted")
-    sys.exit(0)
 else:
-    print("She can't decide if it's accepted or not...")
+    print("Code has been accepted")
     sys.exit(0)
