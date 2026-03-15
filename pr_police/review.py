@@ -3,6 +3,25 @@ import requests
 import sys
 import re
 
+def ask_model(input):
+    """
+    Sends request to the model
+    """
+    pr_review_url = os.getenv('PR_REVIEW_URL')
+    model = os.getenv('MODEL')
+
+    if not pr_review_url:
+        raise ValueError("PR_REVIEW_URL environment variable is not set")
+    
+    data = {'prompt': input,
+        "model": model
+    }
+
+    response = requests.post(pr_review_url, json=data, timeout=999)
+    response.raise_for_status()
+    review = response.json()['response']
+
+    return review
 
 # --- Get diff ---
 try:
@@ -20,13 +39,10 @@ except FileNotFoundError:
 
 # --- Get review from Ollama ---
 try:
-    pr_review_url = os.getenv('PR_REVIEW_URL')
-    model = os.getenv('MODEL')
 
-    if not pr_review_url:
-        raise ValueError("PR_REVIEW_URL environment variable is not set")
-
-    data = {'prompt': f"""You are a senior code reviewer. Make a joke about how old you are.
+    input = f"""You are a senior code reviewer.
+    Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
+        Make a joke about how old you are.
             
         At the top of the file: put VERDICT: CODE IS REJECTED if there are major security concerns.
         Otherwise, put VERDICT: CODE IS CONDITIONALLY ACCEPTED.
@@ -42,24 +58,17 @@ try:
 
         After your review, add a section called INLINE COMMENTS in this exact format, one per line:
         INLINE::filename.py::42::Your comment about this specific line
-
-        Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
         
         Diff:
-        {diff}""",
-        "model": model
-    }
+        {diff}"""
+    review = ask_model(input)
 
-    response = requests.post(pr_review_url, json=data, timeout=999)
-    response.raise_for_status()
-    review = response.json()['response']
     if not review:
         raise ValueError("No review received from the server")
 
 except (requests.RequestException, KeyError, ValueError) as e:
     print(f"❌ Error: {e}")
     sys.exit(1)
-
 
 # --- Get latest commit SHA ---
 try:
@@ -80,7 +89,6 @@ try:
 except KeyError as e:
     print(f"❌ Missing environment variable: {e}")
     sys.exit(1)
-
 
 # --- Post main review comment ---
 try:
@@ -109,9 +117,8 @@ except KeyError as e:
     print(f"❌ Missing environment variable: {e}")
     sys.exit(1)
 
-
 # --- Post inline comments ---
-inline_pattern = re.compile(r'INLINE::(.+?)::(\d+)::(.+)')
+inline_pattern = re.compile(r'INLINE::(.+?)::(\d+)::(.+)', re.IGNORECASE)
 inline_matches = inline_pattern.findall(review)
 
 if inline_matches:
@@ -139,7 +146,6 @@ if inline_matches:
 else:
     print("No inline comments found in review.")
 
-
 # --- Check verdict ---
 if "VERDICT: CODE IS REJECTED" in review.upper().split("\n")[0]:
     print("Code has been rejected")
@@ -147,3 +153,18 @@ if "VERDICT: CODE IS REJECTED" in review.upper().split("\n")[0]:
 else:
     print("Code has been accepted")
     sys.exit(0)
+
+# --- Write PR description if it's empty ---
+pr = requests.get(
+    f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
+    headers={"Authorization": f"Bearer {gh_token}"}
+).json()
+
+if not pr["body"]:
+    generated_description = ask_model(f"Write a concise PR description for this diff:\n{diff}")
+    requests.patch(
+        f"https://api.github.com/repos/{repo}/pulls/{pr_number}",
+        headers={"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"},
+        json={"body": generated_description}
+    )
+
