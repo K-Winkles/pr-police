@@ -22,7 +22,7 @@ try:
     4. Suggestions for improvement with fully rewritten code
 
     At the top of your answer, include a verdict wherein if there are any obvious issues, say CODE IS REJECTED.
-    Otherwise, say CODE IS CONDITIONALLY ACCEPTED.
+    Otherwise, say CODE IS ACCEPTED.
 
     Diff:
     {diff}
@@ -77,6 +77,6 @@ except KeyError as e:
 if "CODE IS REJECTED" in review.upper():
     print("This code has been rejected")
     sys.exit(1)
-elif "CODE IS CONDITIONALLY ACCEPTED":
+elif "CODE IS ACCEPTED":
     print("This code has been conditionally accepted")
     sys.exit(0)
