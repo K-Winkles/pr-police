@@ -31,7 +31,7 @@ try:
         At the top of your answer, include a verdict wherein if there are any major security issues, say CODE IS REJECTED.
         Otherwise, say CODE IS ACCEPTED.
             
-        Include a summary rating the above 4 criteria out of 5 stars.
+        Include a summary rating the above 3 criteria out of 5 stars.
             
         Your tone should be conversational, as if you're a cool older guy mentoring a younger junior developer.
             
@@ -44,7 +44,7 @@ try:
 
     response = requests.post(pr_review_url, json=data, timeout=999)
     response.raise_for_status()
-    review = response.json().get['response']
+    review = response.json()['response']
     if not review:
         raise ValueError("No review received from the server")
 
