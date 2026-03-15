@@ -40,6 +40,9 @@ except Exception as e:
     print(f"❌ Unexpected error: {e}")
     sys.exit(1)
 
+
+print("Now posting to the PR thread...")
+
 gh_token = os.environ["GITHUB_TOKEN"]
 repo = os.environ["GITHUB_REPOSITORY"]
 pr_number = os.environ["PR_NUMBER"]
@@ -49,3 +52,7 @@ requests.post(
     headers={"Authorization": f"Bearer {gh_token}"},
     json={"body": f"## Here's what the PR Police says:\n\n{review}"}
 )
+
+print("Posted to PR thread successfully")
+
+sys.exit(0)
