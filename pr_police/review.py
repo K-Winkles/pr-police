@@ -19,7 +19,7 @@ except FileNotFoundError:
 try:
     pr_review_url = os.getenv('PR_REVIEW_URL')
     model = os.getenv('MODEL')
-    print(pr_review_url)
+
     if not pr_review_url:
         raise ValueError("PR_REVIEW_URL environment variable is not set")
 
@@ -41,6 +41,7 @@ try:
 
     response = requests.post(pr_review_url, json=data, timeout=999)
     response.raise_for_status()
+    print(response)
     review = response.json().get('review')
     if not review:
         raise ValueError("No review received from the server")
