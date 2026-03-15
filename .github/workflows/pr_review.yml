@@ -1,0 +1,23 @@
+name: PR Police
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  review:
+    runs-on: self-hosted  # uses your local machine
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: diff
+        run: |
+          git diff origin/main...HEAD > pr_diff.txt
+          cat pr_diff.txt
+
+      - name: Run PR Police
+        run: |
+          python review.py
